@@ -1,0 +1,20 @@
+# Executables
+*.exe
+*.dll
+*.o
+*.obj
+
+# Build folders
+/build/
+/bin/
+/Debug/
+/Release/
+
+# IDE
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.user
+
+# Logs
+*.log
