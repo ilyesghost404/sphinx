@@ -100,8 +100,7 @@ static void strokeRounded(SDL_Renderer* r, SDL_Rect rect, int radius, SDL_Color 
 // =========================================================
 void initPlay(SDL_Renderer* renderer)
 {
-    showSavePrompt = 1;
-    initSave(renderer);
+    showSavePrompt = 0;
 
     // Render title with a larger font to avoid pixelation
     TTF_Font* titleFontLocal = TTF_OpenFont("assets/fonts/ARIAL.TTF", 64);
@@ -217,8 +216,14 @@ void handlePlayEvent(SDL_Event* e, MenuState* currentMenuPtr)
         return;
     }
 
-    int mx, my;
-    SDL_GetMouseState(&mx, &my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
 
     int hovered = -1;
     for (int i = 0; i < PLAY_BUTTON_COUNT; i++)

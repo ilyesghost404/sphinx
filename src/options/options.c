@@ -35,52 +35,6 @@ extern Mix_Chunk* clickSound;
 extern MenuState currentMenu;
 extern Mix_Music* menuMusic;
 
-static void fillRounded(SDL_Renderer* r, SDL_Rect rect, int radius, SDL_Color col)
-{
-    if (radius <= 0) { SDL_SetRenderDrawColor(r, col.r,col.g,col.b,col.a); SDL_RenderFillRect(r, &rect); return; }
-    if (radius*2 > rect.w) radius = rect.w/2;
-    if (radius*2 > rect.h) radius = rect.h/2;
-    SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(r, col.r, col.g, col.b, col.a);
-    SDL_Rect mid = {rect.x, rect.y + radius, rect.w, rect.h - 2*radius};
-    SDL_RenderFillRect(r, &mid);
-    SDL_Rect center = {rect.x + radius, rect.y, rect.w - 2*radius, rect.h};
-    SDL_RenderFillRect(r, &center);
-    for (int y = 0; y < radius; ++y)
-    {
-        int dx = (int)(sqrtf((float)(radius*radius - y*y)) + 0.5f);
-        int xL = rect.x + radius - dx;
-        int xR = rect.x + rect.w - radius + dx - 1;
-        SDL_RenderDrawLine(r, xL, rect.y + y, xR, rect.y + y);
-        SDL_RenderDrawLine(r, xL, rect.y + rect.h - 1 - y, xR, rect.y + rect.h - 1 - y);
-    }
-}
-
-static void strokeRounded(SDL_Renderer* r, SDL_Rect rect, int radius, SDL_Color col)
-{
-    if (radius <= 0) { SDL_SetRenderDrawColor(r, col.r,col.g,col.b,col.a); SDL_RenderDrawRect(r, &rect); return; }
-    if (radius*2 > rect.w) radius = rect.w/2;
-    if (radius*2 > rect.h) radius = rect.h/2;
-    SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(r, col.r, col.g, col.b, col.a);
-    SDL_RenderDrawLine(r, rect.x + radius, rect.y, rect.x + rect.w - radius - 1, rect.y);
-    SDL_RenderDrawLine(r, rect.x + radius, rect.y + rect.h - 1, rect.x + rect.w - radius - 1, rect.y + rect.h - 1);
-    SDL_RenderDrawLine(r, rect.x, rect.y + radius, rect.x, rect.y + rect.h - radius - 1);
-    SDL_RenderDrawLine(r, rect.x + rect.w - 1, rect.y + radius, rect.x + rect.w - 1, rect.y + rect.h - radius - 1);
-    for (int y = 0; y < radius; ++y)
-    {
-        int dx = (int)(sqrtf((float)(radius*radius - y*y)) + 0.5f);
-        int x1 = rect.x + radius - dx;
-        int x2 = rect.x + rect.w - radius + dx - 1;
-        int yt = rect.y + y;
-        int yb = rect.y + rect.h - 1 - y;
-        SDL_RenderDrawPoint(r, x1, yt);
-        SDL_RenderDrawPoint(r, x2, yt);
-        SDL_RenderDrawPoint(r, x1, yb);
-        SDL_RenderDrawPoint(r, x2, yb);
-    }
-}
-
 void initOptions(SDL_Renderer* renderer)
 {
     if (!font) return;
@@ -179,8 +133,8 @@ void renderOptions(SDL_Renderer* renderer, SDL_Window* window)
     SDL_RenderFillRect(renderer, &shadow);
 
     // Panel
-    fillRounded(renderer, optionsPanelRect, 16, (SDL_Color){10,15,25,180});
-    strokeRounded(renderer, optionsPanelRect, 16, (SDL_Color){180,140,60,220});
+    uiFillRounded(renderer, optionsPanelRect, 16, (SDL_Color){10,15,25,180});
+    uiStrokeRounded(renderer, optionsPanelRect, 16, (SDL_Color){180,140,60,220});
 
     // Labels
     SDL_RenderCopy(renderer, displayLabelTexture, NULL, &displayLabelRect);
@@ -195,14 +149,14 @@ void renderOptions(SDL_Renderer* renderer, SDL_Window* window)
             rect.x -= 6; rect.y -= 4;
             rect.w += 12; rect.h += 8;
         }
-        fillRounded(renderer, rect, 12, (SDL_Color){10,15,25,180});
+        uiFillRounded(renderer, rect, 12, (SDL_Color){10,15,25,180});
         SDL_Color border = {
             (Uint8)(optionsButtons[i].hovered?255:180),
             (Uint8)(optionsButtons[i].hovered?215:140),
             (Uint8)(optionsButtons[i].hovered?0:60),
             220
         };
-        strokeRounded(renderer, rect, 12, border);
+        uiStrokeRounded(renderer, rect, 12, border);
         SDL_RenderCopy(renderer, optionsButtons[i].textTexture, NULL, &optionsButtons[i].textRect);
     }
 
@@ -214,15 +168,21 @@ void renderOptions(SDL_Renderer* renderer, SDL_Window* window)
     float percent = volume / 128.0f;
     volumeFillRect = (SDL_Rect){volumeBarRect.x+2, volumeBarRect.y+2, (int)((VOLUME_BAR_WIDTH-4)*percent), VOLUME_BAR_HEIGHT-4};
 
-    fillRounded(renderer, volumeBarRect, 8, (SDL_Color){60,60,100,200});
-    fillRounded(renderer, volumeFillRect, 8, (SDL_Color){255,215,0,220});
-    strokeRounded(renderer, volumeBarRect, 8, (SDL_Color){180,140,60,220});
+    uiFillRounded(renderer, volumeBarRect, 8, (SDL_Color){60,60,100,200});
+    uiFillRounded(renderer, volumeFillRect, 8, (SDL_Color){255,215,0,220});
+    uiStrokeRounded(renderer, volumeBarRect, 8, (SDL_Color){180,140,60,220});
 }
 
 void handleOptionsEvent(SDL_Event* e, int* running, SDL_Window* window)
 {
-    int mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mouseX = lastMouseX;
+    int mouseY = lastMouseY;
     int currentHovered = -1;
 
     for(int i=0; i<OPTIONS_BUTTON_COUNT; i++)
@@ -245,8 +205,8 @@ void handleOptionsEvent(SDL_Event* e, int* running, SDL_Window* window)
 
         switch(selectedOptionButton)
         {
-            case 0: SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN); break;
-            case 1: SDL_SetWindowFullscreen(window, 0); break;
+            case 0: applyDisplayMode(window, SDL_GetRenderer(window), 1); break;
+            case 1: applyDisplayMode(window, SDL_GetRenderer(window), 0); break;
             case 2: Mix_VolumeMusic(Mix_VolumeMusic(-1)+16); break;
             case 3: Mix_VolumeMusic(Mix_VolumeMusic(-1)-16); break;
             case 4:
@@ -272,12 +232,12 @@ void handleOptionsEvent(SDL_Event* e, int* running, SDL_Window* window)
                 Uint32 flags = SDL_GetWindowFlags(window);
                 if (flags & SDL_WINDOW_FULLSCREEN)
                 {
-                    SDL_SetWindowFullscreen(window, 0);
+                    applyDisplayMode(window, SDL_GetRenderer(window), 0);
                     selectedOptionButton = 1; // NORMAL
                 }
                 else
                 {
-                    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+                    applyDisplayMode(window, SDL_GetRenderer(window), 1);
                     selectedOptionButton = 0; // FULLSCREEN
                 }
                 break;

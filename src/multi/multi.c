@@ -1,4 +1,5 @@
 #include "multi.h"
+#include "../background/background.h"
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_image.h>
@@ -201,7 +202,14 @@ static int inside(SDL_Rect r, int x, int y){ return x>=r.x && x<=r.x+r.w && y>=r
 
 void handleMultiEvent(SDL_Event* e, MenuState* currentMenu)
 {
-    int mx,my; SDL_GetMouseState(&mx,&my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
     {
         int cW = 180, cH = 56, cGap = 24;
         int bottomY = panelRect.y + panelRect.h - cH - 24;
@@ -273,7 +281,8 @@ void handleMultiEvent(SDL_Event* e, MenuState* currentMenu)
             for (int i=0;i<players;i++) if (avatars[i]==-1) ok=0;
             if (ok) { 
                 if(clickSound) Mix_PlayChannel(-1, clickSound, 0); 
-                *currentMenu = MENU_SCORE; 
+                backgroundOnEnterGameplay();
+                *currentMenu = MENU_GAME; 
                 players = 0; 
                 inputType = -1; 
                 for (int i=0;i<4;i++) avatars[i]=-1; 
@@ -293,7 +302,8 @@ void handleMultiEvent(SDL_Event* e, MenuState* currentMenu)
             int ok = players>0 && inputType!=-1;
             for (int i=0;i<players;i++) if (avatars[i]==-1) ok=0;
             if (ok) { 
-                *currentMenu = MENU_SCORE; 
+                backgroundOnEnterGameplay();
+                *currentMenu = MENU_GAME; 
                 players = 0; 
                 inputType = -1; 
                 for (int i=0;i<4;i++) avatars[i]=-1; 

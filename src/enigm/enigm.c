@@ -216,7 +216,14 @@ static int inside(SDL_Rect r, int x, int y)
 
 void handleEnigmEvent(SDL_Event* e, MenuState* currentMenu)
 {
-    int mx,my; SDL_GetMouseState(&mx,&my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
     quizBtn.hovered = inside(quizBtn.rect,mx,my);
     puzzleBtn.hovered = inside(puzzleBtn.rect,mx,my);
     backBtn.hovered = inside(backBtn.rect,mx,my);

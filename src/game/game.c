@@ -1,4 +1,5 @@
 #include "game.h"
+#include "../common.h"
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
@@ -65,6 +66,7 @@ int game_loop(SDL_Window* window, SDL_Renderer* renderer) {
 
             if(event.type == SDL_MOUSEBUTTONDOWN) {
                 SDL_GetMouseState(&mouseX, &mouseY);
+                windowToLogical(window, renderer, mouseX, mouseY, &mouseX, &mouseY);
                 if(isMouseOver(backButton.rect, mouseX, mouseY)) {
                     return 0; // back to menu
                 }
@@ -72,6 +74,7 @@ int game_loop(SDL_Window* window, SDL_Renderer* renderer) {
         }
 
         SDL_GetMouseState(&mouseX, &mouseY);
+        windowToLogical(window, renderer, mouseX, mouseY, &mouseX, &mouseY);
         int hover = isMouseOver(backButton.rect, mouseX, mouseY);
         backButton.hoveredLastFrame = hover;
         backButton.hoverFactor = lerp(backButton.hoverFactor, hover?1.0f:0.0f, dt*10);

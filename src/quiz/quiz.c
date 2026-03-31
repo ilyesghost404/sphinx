@@ -11,6 +11,9 @@ extern Mix_Chunk* clickSound;
 extern SDL_Texture* bgShared[SHARED_BG_FRAMES];
 extern int gCurrentFrame;
 extern Mix_Music* gameMusic;
+extern Mix_Music* menuMusic;
+
+#include "../background/background.h"
 
 typedef struct {
     const char* q;
@@ -31,6 +34,7 @@ static int currentQ = 0;
 static int selected = -1;
 static int revealed = 0;
 static int quizFinished = 0;
+static int quizPassed = 1;
 static SDL_Renderer* quizRenderer = NULL;
 static Uint32 highlightStart = 0;
 static int highlightPending = 0;
@@ -178,6 +182,7 @@ void initQuiz(SDL_Renderer* renderer)
     selected = -1;
     revealed = 0;
     quizFinished = 0;
+    quizPassed = 1;
 
     if (!quizBgTex)
     {
@@ -236,7 +241,14 @@ void handleQuizEvent(SDL_Event* e, MenuState* currentMenu)
     if (gameMusic && !Mix_PlayingMusic())
         Mix_PlayMusic(gameMusic, -1);
 
-    int mx,my; SDL_GetMouseState(&mx,&my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
     for (int i=0;i<3;i++) optBtns[i].hovered = inside(optBtns[i].rect,mx,my);
     backBtn.hovered = quizFinished && inside(backBtn.rect, mx, my);
 
@@ -247,11 +259,23 @@ void handleQuizEvent(SDL_Event* e, MenuState* currentMenu)
             if (optBtns[i].hovered) {
                 selected = i; revealed = 1;
                 if (clickSound) Mix_PlayChannel(-1, clickSound, 0);
-                if (currentQ < 2) {
-                    highlightPending = 1;
-                    highlightStart = SDL_GetTicks();
-                } else {
+                int correct = questions[currentQ].correct;
+                if (selected != correct)
+                {
+                    quizPassed = 0;
                     quizFinished = 1;
+                    highlightPending = 0;
+                    setButton(quizRenderer, &backBtn, "QUIT TO MAIN MENU", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+                }
+                else
+                {
+                    if (currentQ < 2) {
+                        highlightPending = 1;
+                        highlightStart = SDL_GetTicks();
+                    } else {
+                        quizFinished = 1;
+                        setButton(quizRenderer, &backBtn, "BACK TO GAME", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+                    }
                 }
             }
         }
@@ -259,7 +283,16 @@ void handleQuizEvent(SDL_Event* e, MenuState* currentMenu)
         if (quizFinished && backBtn.hovered)
         {
             if (clickSound) Mix_PlayChannel(-1, clickSound, 0);
-            *currentMenu = MENU_ENIGM;
+            if (quizPassed)
+            {
+                backgroundGrantOneMoreLife();
+                *currentMenu = MENU_GAME;
+            }
+            else
+            {
+                if (menuMusic) Mix_PlayMusic(menuMusic, -1);
+                *currentMenu = MENU_MAIN;
+            }
             resetQuiz();
             return;
         }
@@ -269,36 +302,88 @@ void handleQuizEvent(SDL_Event* e, MenuState* currentMenu)
     {
         if (quizFinished)
         {
-            *currentMenu = MENU_ENIGM;
-            resetQuiz();
+            SDL_Keycode k = e->key.keysym.sym;
+            if (k == SDLK_ESCAPE) quizPassed = 0;
+            if (k == SDLK_RETURN || k == SDLK_KP_ENTER || k == SDLK_SPACE || k == SDLK_ESCAPE)
+            {
+                if (clickSound) Mix_PlayChannel(-1, clickSound, 0);
+                if (quizPassed)
+                {
+                    backgroundGrantOneMoreLife();
+                    *currentMenu = MENU_GAME;
+                }
+                else
+                {
+                    if (menuMusic) Mix_PlayMusic(menuMusic, -1);
+                    *currentMenu = MENU_MAIN;
+                }
+                resetQuiz();
+                return;
+            }
             return;
         }
 
         if (e->key.keysym.sym == SDLK_1) {
             selected = 0; revealed = 1;
-            if (currentQ < 2) {
-                highlightPending = 1;
-                highlightStart = SDL_GetTicks();
-            } else {
+            int correct = questions[currentQ].correct;
+            if (selected != correct)
+            {
+                quizPassed = 0;
                 quizFinished = 1;
+                highlightPending = 0;
+                setButton(quizRenderer, &backBtn, "QUIT TO MAIN MENU", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+            }
+            else
+            {
+                if (currentQ < 2) {
+                    highlightPending = 1;
+                    highlightStart = SDL_GetTicks();
+                } else {
+                    quizFinished = 1;
+                    setButton(quizRenderer, &backBtn, "BACK TO GAME", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+                }
             }
         }
         if (e->key.keysym.sym == SDLK_2) {
             selected = 1; revealed = 1;
-            if (currentQ < 2) {
-                highlightPending = 1;
-                highlightStart = SDL_GetTicks();
-            } else {
+            int correct = questions[currentQ].correct;
+            if (selected != correct)
+            {
+                quizPassed = 0;
                 quizFinished = 1;
+                highlightPending = 0;
+                setButton(quizRenderer, &backBtn, "QUIT TO MAIN MENU", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+            }
+            else
+            {
+                if (currentQ < 2) {
+                    highlightPending = 1;
+                    highlightStart = SDL_GetTicks();
+                } else {
+                    quizFinished = 1;
+                    setButton(quizRenderer, &backBtn, "BACK TO GAME", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+                }
             }
         }
         if (e->key.keysym.sym == SDLK_3) {
             selected = 2; revealed = 1;
-            if (currentQ < 2) {
-                highlightPending = 1;
-                highlightStart = SDL_GetTicks();
-            } else {
+            int correct = questions[currentQ].correct;
+            if (selected != correct)
+            {
+                quizPassed = 0;
                 quizFinished = 1;
+                highlightPending = 0;
+                setButton(quizRenderer, &backBtn, "QUIT TO MAIN MENU", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+            }
+            else
+            {
+                if (currentQ < 2) {
+                    highlightPending = 1;
+                    highlightStart = SDL_GetTicks();
+                } else {
+                    quizFinished = 1;
+                    setButton(quizRenderer, &backBtn, "BACK TO GAME", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
+                }
             }
         }
     }
@@ -394,6 +479,7 @@ void resetQuiz()
     selected = -1;
     revealed = 0;
     quizFinished = 0;
+    quizPassed = 1;
     highlightPending = 0;
     if (qTexture) { SDL_DestroyTexture(qTexture); qTexture = NULL; }
     loadQuestion(quizRenderer);
@@ -403,4 +489,5 @@ void resetQuiz()
     for (int i=0;i<3;i++) optBtns[i].hovered = 0;
     backBtn.hovered = 0;
     nextBtn.hovered = 0;
+    setButton(quizRenderer, &backBtn, "BACK TO ENIGM", backBtn.rect.x, backBtn.rect.y, backBtn.rect.w, backBtn.rect.h);
 }

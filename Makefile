@@ -28,10 +28,15 @@ SRC = main.c \
       src/play/play.c \
       src/save/save.c \
       src/newgame/newgame.c \
+      src/character/character.c \
       src/single/single.c \
       src/multi/multi.c \
+      src/background/background.c \
+      src/enemy/enemy.c \
       src/enigm/enigm.c \
       src/quiz/quiz.c \
+      src/support/support.c \
+      src/minimap/minimap.c \
       src/common.c
 
 # Object files

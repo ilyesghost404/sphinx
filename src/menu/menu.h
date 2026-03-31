@@ -31,4 +31,4 @@ void updateMenu();
 void renderMenu(SDL_Renderer* renderer);
 void destroyMenu();
 
-#endif // MENU_H
+#endif // MENU_

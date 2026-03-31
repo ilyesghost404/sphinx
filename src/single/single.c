@@ -1,4 +1,5 @@
 #include "single.h"
+#include "../background/background.h"
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_image.h>
@@ -198,7 +199,14 @@ static int inside(SDL_Rect r, int x, int y){ return x>=r.x && x<=r.x+r.w && y>=r
 
 void handleSingleEvent(SDL_Event* e, MenuState* currentMenu)
 {
-    int mx,my; SDL_GetMouseState(&mx,&my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
     avatarBoyBtn.hovered = inside(avatarBoyBtn.rect,mx,my);
     avatarGirlBtn.hovered = inside(avatarGirlBtn.rect,mx,my);
     inputKBMBtn.hovered = inside(inputKBMBtn.rect,mx,my);
@@ -219,7 +227,8 @@ void handleSingleEvent(SDL_Event* e, MenuState* currentMenu)
         }
         else if (confirmBtn.hovered && selectedAvatar != -1 && selectedInput != -1) { 
             if(clickSound) Mix_PlayChannel(-1, clickSound, 0); 
-            *currentMenu = MENU_SCORE; 
+            backgroundOnEnterGameplay();
+            *currentMenu = MENU_GAME; 
             selectedAvatar = -1; 
             selectedInput = -1; 
         }
@@ -233,7 +242,8 @@ void handleSingleEvent(SDL_Event* e, MenuState* currentMenu)
         }
         if (e->key.keysym.sym == SDLK_RETURN || e->key.keysym.sym == SDLK_KP_ENTER)
             if (selectedAvatar != -1 && selectedInput != -1) { 
-                *currentMenu = MENU_SCORE; 
+                backgroundOnEnterGameplay();
+                *currentMenu = MENU_GAME; 
                 selectedAvatar = -1; 
                 selectedInput = -1; 
             }

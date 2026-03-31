@@ -217,8 +217,14 @@ void renderSave(SDL_Renderer* renderer)
 // =========================================================
 void handleSaveEvent(SDL_Event* e, MenuState* currentMenuPtr)
 {
-    int mx, my;
-    SDL_GetMouseState(&mx,&my);
+    static int lastMouseX = 0;
+    static int lastMouseY = 0;
+
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mx = lastMouseX;
+    int my = lastMouseY;
 
     int hovered = -1;
 

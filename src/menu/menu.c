@@ -211,11 +211,16 @@ void initMenu(SDL_Renderer* renderer)
 }
 
 static int selectedButton = 0;
+static int lastMouseX = 0;
+static int lastMouseY = 0;
 
 void handleMenuEvent(SDL_Event* e, int* running, MenuState* currentMenu)
 {
-    int mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
+    if (e->type == SDL_MOUSEMOTION) { lastMouseX = e->motion.x; lastMouseY = e->motion.y; }
+    if (e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP) { lastMouseX = e->button.x; lastMouseY = e->button.y; }
+
+    int mouseX = lastMouseX;
+    int mouseY = lastMouseY;
 
     int currentHovered = -1;
 
@@ -249,7 +254,7 @@ void handleMenuEvent(SDL_Event* e, int* running, MenuState* currentMenu)
                 switch(i)
                 {
                     case 0:
-                        *currentMenu = MENU_SAVE_PROMPT;
+                        *currentMenu = MENU_PLAY;
                         if (gameMusic) Mix_PlayMusic(gameMusic, -1);
                         break;
                     case 1:
@@ -276,7 +281,7 @@ void handleMenuEvent(SDL_Event* e, int* running, MenuState* currentMenu)
         switch(e->key.keysym.sym)
         {
             case SDLK_p:
-                *currentMenu = MENU_SAVE_PROMPT;
+                *currentMenu = MENU_PLAY;
                 if (gameMusic) Mix_PlayMusic(gameMusic, -1);
                 break;
             case SDLK_o:
@@ -303,7 +308,7 @@ void handleMenuEvent(SDL_Event* e, int* running, MenuState* currentMenu)
                 Mix_PlayChannel(-1, clickSound, 0);
                 switch(selectedButton)
                 {
-                    case 0: *currentMenu = MENU_SAVE_PROMPT; break;
+                    case 0: *currentMenu = MENU_PLAY; break;
                     case 1: *currentMenu = MENU_OPTIONS; break;
                     case 2: *currentMenu = MENU_SCORE; break;
                     case 3: *currentMenu = MENU_STORY; break;

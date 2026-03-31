@@ -14,8 +14,10 @@
 #include "src/newgame/newgame.h"
 #include "src/single/single.h"
 #include "src/multi/multi.h"
+#include "src/background/background.h"
 #include "src/enigm/enigm.h"
 #include "src/quiz/quiz.h"
+#include "src/support/support.h"
 
 // Global state
 MenuState currentMenu = MENU_MAIN;
@@ -113,6 +115,8 @@ int main(int argc, char* argv[])
     Mix_AllocateChannels(16);
 
     // ================= WINDOW =================
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+
     SDL_Window* window = SDL_CreateWindow(
         "SPHINX: THE LOST NOSE",
         SDL_WINDOWPOS_CENTERED,
@@ -146,6 +150,8 @@ int main(int argc, char* argv[])
         printf("Renderer creation failed: %s\n", SDL_GetError());
         return -1;
     }
+
+    applyDisplayMode(window, renderer, 0);
 
     SDL_Texture* loadingBg = NULL;
     {
@@ -220,8 +226,10 @@ int main(int argc, char* argv[])
     initNewGame(renderer);
     initSingle(renderer);
     initMulti(renderer);
+    initBackground(renderer);
     initEnigm(renderer);
     initQuiz(renderer);
+    initSupport(renderer);
 
     int running = 1;
     SDL_Event e;
@@ -233,6 +241,8 @@ int main(int argc, char* argv[])
         {
             if (e.type == SDL_QUIT)
                 running = 0;
+
+            normalizeEventCoords(window, renderer, &e);
 
             if (currentMenu == MENU_MAIN)
                 handleMenuEvent(&e, &running, &currentMenu);
@@ -252,10 +262,14 @@ int main(int argc, char* argv[])
                 handleSingleEvent(&e, &currentMenu);
             else if (currentMenu == MENU_MULTI)
                 handleMultiEvent(&e, &currentMenu);
+            else if (currentMenu == MENU_GAME)
+                handleBackgroundEvent(&e, &currentMenu);
             else if (currentMenu == MENU_ENIGM)
                 handleEnigmEvent(&e, &currentMenu);
             else if (currentMenu == MENU_QUIZ)
                 handleQuizEvent(&e, &currentMenu);
+            else if (currentMenu == MENU_SUPPORT)
+                handleSupportEvent(&e, &currentMenu);
         }
 
         if (currentMenu == MENU_MAIN)
@@ -276,6 +290,10 @@ int main(int argc, char* argv[])
             updateSingle();
         else if (currentMenu == MENU_MULTI)
             updateMulti();
+        else if (currentMenu == MENU_GAME)
+            updateBackground(&currentMenu);
+        else if (currentMenu == MENU_SUPPORT)
+            updateSupport();
         else if (currentMenu == MENU_ENIGM)
             updateEnigm();
         else if (currentMenu == MENU_QUIZ)
@@ -301,10 +319,17 @@ int main(int argc, char* argv[])
             renderSingle(renderer);
         else if (currentMenu == MENU_MULTI)
             renderMulti(renderer);
+        else if (currentMenu == MENU_GAME)
+            renderBackground(renderer);
         else if (currentMenu == MENU_ENIGM)
             renderEnigm(renderer);
         else if (currentMenu == MENU_QUIZ)
             renderQuiz(renderer);
+        else if (currentMenu == MENU_SUPPORT)
+        {
+            renderBackground(renderer);
+            renderSupport(renderer);
+        }
 
         SDL_RenderPresent(renderer);
     }
@@ -329,8 +354,10 @@ cleanup:
     destroyNewGame();
     destroySingle();
     destroyMulti();
+    destroyBackground();
     destroyEnigm();
     destroyQuiz();
+    destroySupport();
 
     Mix_CloseAudio();
     Mix_Quit();
