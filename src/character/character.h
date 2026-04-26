@@ -41,6 +41,7 @@ typedef struct {
     int hasDealtDamageInCurrentAttack;
     float attackCooldown;
     float attackRange;
+    int isSprinting;
 
     CharacterClip clips[6];
 } Character;
@@ -57,5 +58,7 @@ void characterRevive(Character* c);
 
 void characterUpdate(Character* c, float dt);
 void characterRender(const Character* c, SDL_Renderer* renderer, float cameraX, int isHurt);
+void characterSprint(Character* c, int active);
+
 
 #endif
