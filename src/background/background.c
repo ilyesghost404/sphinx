@@ -1201,6 +1201,7 @@ static void setPaused(int paused)
         gRightDown = 0;
         gJumpQueued = 0;
         gAttackQueued = 0;
+        gSprintDown = 0; 
         gPauseMode = PAUSE_MODE_MAIN;
         setPauseSelection(0, 0);
     }
@@ -1767,6 +1768,7 @@ void handleBackgroundEvent(SDL_Event* e, MenuState* currentMenu)
         {
             if (k == SDLK_q) gLeftDown = down;
             if (k == SDLK_d) gRightDown = down;
+            if (k == SDLK_LSHIFT || k == SDLK_RSHIFT) gSprintDown = down; 
             if (down && k == SDLK_SPACE) gJumpQueued = 1;
             if (down && k == SDLK_a) gAttackQueued = 1;
         }
@@ -1791,7 +1793,7 @@ void updateBackground(MenuState* currentMenu)
             if (!gPlayer.isDead && gPlayer.anim != CHAR_ANIM_HURT) {
                 if (gLeftDown && !gRightDown) dir = -1;
                 else if (gRightDown && !gLeftDown) dir = 1;
-
+                characterSprint(&gPlayer, gSprintDown); 
                 characterSetMove(&gPlayer, dir);
                 if (gJumpQueued) { characterJump(&gPlayer); gJumpQueued = 0; }
                 if (gAttackQueued) { characterAttack(&gPlayer); gAttackQueued = 0; }
