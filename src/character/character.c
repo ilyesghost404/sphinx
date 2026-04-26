@@ -122,12 +122,12 @@ int characterInit(Character* c, SDL_Renderer* renderer, int skinIndex)
              "assets/images/characters/main_character/%d/die/Asassin_%02d__DIE_%%03d.png",
              skinIndex, skinIndex);
 
-    if (!loadClip(&c->clips[CHAR_ANIM_IDLE], renderer, idlePattern, 10, 0.10f, 1)) return 0;
-    if (!loadClip(&c->clips[CHAR_ANIM_WALK], renderer, walkPattern, 10, 0.08f, 1)) return 0;
-    if (!loadClip(&c->clips[CHAR_ANIM_JUMP], renderer, jumpPattern, 10, 0.09f, 1)) return 0;
+    if (!loadClip(&c->clips[CHAR_ANIM_IDLE],   renderer, idlePattern,   10, 0.10f, 1)) return 0;
+    if (!loadClip(&c->clips[CHAR_ANIM_WALK],   renderer, walkPattern,   10, 0.08f, 1)) return 0;
+    if (!loadClip(&c->clips[CHAR_ANIM_JUMP],   renderer, jumpPattern,   10, 0.09f, 1)) return 0;
     if (!loadClip(&c->clips[CHAR_ANIM_ATTACK], renderer, attackPattern, 10, 0.07f, 0)) return 0;
-    if (!loadClip(&c->clips[CHAR_ANIM_HURT], renderer, hurtPattern, 10, 0.08f, 0)) return 0;
-    if (!loadClip(&c->clips[CHAR_ANIM_DIE], renderer, diePattern, 10, 0.10f, 0)) return 0;
+    if (!loadClip(&c->clips[CHAR_ANIM_HURT],   renderer, hurtPattern,   10, 0.08f, 0)) return 0;
+    if (!loadClip(&c->clips[CHAR_ANIM_DIE],    renderer, diePattern,    10, 0.10f, 0)) return 0;
 
     c->x = 200.0f;
     c->groundY = (float)SCREEN_HEIGHT - 120.0f;
@@ -144,6 +144,7 @@ int characterInit(Character* c, SDL_Renderer* renderer, int skinIndex)
     c->hasDealtDamageInCurrentAttack = 0;
     c->attackCooldown = 0.0f;
     c->attackRange = 180.0f;
+    c->isSprinting = 0;  // <-- sprint starts off
     setAnim(c, CHAR_ANIM_IDLE, 1);
 
     return 1;
@@ -156,12 +157,21 @@ void characterDestroy(Character* c)
         destroyClip(&c->clips[i]);
 }
 
+void characterSprint(Character* c, int active)
+{
+    if (!c) return;
+    c->isSprinting = active;
+}
+
 void characterSetMove(Character* c, int dir)
 {
     if (!c) return;
-    const float speed = 280.0f;
+    const float normalSpeed = 280.0f;
+    const float sprintSpeed = 500.0f;  // adjust to taste
+    float speed = c->isSprinting ? sprintSpeed : normalSpeed;
+
     if (dir < 0) { c->vx = -speed; c->facing = -1; }
-    else if (dir > 0) { c->vx = speed; c->facing = 1; }
+    else if (dir > 0) { c->vx =  speed; c->facing =  1; }
     else c->vx = 0.0f;
 }
 
@@ -190,7 +200,7 @@ void characterTakeDamage(Character* c, int damage)
     else
     {
         setAnim(c, CHAR_ANIM_HURT, 1);
-        c->hurtTimer = 0.5f; // Hurt animation duration
+        c->hurtTimer = 0.5f;
     }
 }
 
@@ -216,6 +226,7 @@ void characterRevive(Character* c)
     c->hurtTimer = 0.0f;
     c->attackCooldown = 0.0f;
     c->hasDealtDamageInCurrentAttack = 0;
+    c->isSprinting = 0;
     setAnim(c, CHAR_ANIM_IDLE, 1);
 }
 
@@ -281,7 +292,6 @@ void characterUpdate(Character* c, float dt)
 
     if (c->anim == CHAR_ANIM_DIE)
     {
-        // Don't transition out of die animation
         return;
     }
 
@@ -304,18 +314,14 @@ void characterRender(const Character* c, SDL_Renderer* renderer, float cameraX, 
     SDL_Texture* t = clip->frames[idx];
     if (!t) return;
 
-    // Blinking effect if hurt: tint first then blink
     if (isHurt)
     {
         SDL_SetTextureColorMod(t, 255, 100, 100);
-        // Faster blinking
         if ((SDL_GetTicks() / 80) % 2 == 0)
-        {
             return;
-        }
     }
     else
-    { 
+    {
         SDL_SetTextureColorMod(t, 255, 255, 255);
     }
 
